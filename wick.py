@@ -75,3 +75,28 @@ class G2_0(Block2Gf):
             if (i2[0] == j2[0]) and (k2[0] == l2[0]):
                 g2_tmp[i1[1], j1[1], k1[1], l1[1]] = g1[i2[0]].data[f1, i2[1], j2[1]] * g1[k2[0]].data[f2, k2[1], l2[1]]
         return g2_tmp
+
+    def get_equivalent_indices(self, block, **kwargs):
+        m, n = self[block].data.shape[3], self[block].data.shape[5]
+        eclasses = []
+        for i,j,k,l in itt.product(range(m), range(m), range(n), range(n)):
+            is_new_eclass = True
+            for i_e, eclass in enumerate(eclasses):
+                for i2,j2,k2,l2 in eclass:
+                    if np.allclose(self[block].data[:,:,:,i,j,k,l], self[block].data[:,:,:,i2,j2,k2,l2], **kwargs):
+                        is_new_eclass = False
+                        eclasses[i_e].append((i,j,k,l))
+                        break
+                if not is_new_eclass:
+                    break
+            if is_new_eclass:
+                eclasses.append([(i,j,k,l)])
+        return eclasses
+
+    def get_zero_indices(self, block, **kwargs):
+        m, n = self[block].data.shape[3], self[block].data.shape[5]
+        zeros = []
+        for i,j,k,l in itt.product(range(m), range(m), range(n), range(n)):
+            if np.allclose(self[block].data[:,:,:,i,j,k,l], np.zeros(self[block].data.shape[:3]), **kwargs):
+                zeros.append((i,j,k,l))
+        return zeros

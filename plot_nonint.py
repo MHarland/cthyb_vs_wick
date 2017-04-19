@@ -44,6 +44,7 @@ for block, archivename in itt.product([('up','up'), ('up','dn')], sys.argv[1:]):
         g2 = sto[blockstruct]["G2_iw_inu_inup_"+channel]
         trg2 = TraceInuInup(g2)
         trg2plot = G2iwPlot(trg2)
+        #indices_to_plot = [(block[0],block[1])+indices[0] for indices in g2_0.get_equivalent_indices(block)]
         if n_orbs == 2:
             indices_to_plot = [(block[0],block[1],0,0,0,0), (block[0],block[1],0,0,1,1), (block[0],block[1],0,1,1,0)]
         if n_orbs == 1:
