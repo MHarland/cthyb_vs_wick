@@ -75,4 +75,4 @@ class TraceInuInup(Block2Gf):
         for s, b in g2:
             for g2_inu_iw in b.data.transpose(1,2,0,3,4,5,6):
                 for g2_iw in g2_inu_iw:
-                    self[s].data[:,:,:] += g2_iw / norm
+                    self[s].data[:,:,:,:,:] += g2_iw / norm
