@@ -7,6 +7,7 @@ class G2_0(Block2Gf):
     def __init__(self, g1_inu, n_iw, n_inu, blocks_to_calculate = [], blockstructure_to_compare_with = "AABB"):
         """
         g1_inu has to be a BlockGf of GfImFreq
+        abstract class, realization needs method set_block()
         """
         mb = MeshImFreq(g1_inu.beta, "Boson", n_iw)
         mf = MeshImFreq(g1_inu.beta, "Fermion", n_inu)
@@ -38,16 +39,8 @@ class G2_0(Block2Gf):
         if len(blocks_to_calculate) == 0:
             blocks_to_calculate = self.indices
         self.blockstruct = blockstructure_to_compare_with
-        contractions = {"direct": [1,0,3,2], "exchange": [1,2,3,0]}
         for blockindex in blocks_to_calculate:
-            self.set_block(g1_inu, blockindex, contractions)
-
-    def set_block(self, g1, blockindex, contractions):
-        for (i_w, w), (i_nu, nu), (i_nup, nup) in self.iterate_mesh_inds():
-            if w == 0:
-                self[blockindex].data[i_w, i_nu, i_nup, :,:,:,:] += self.beta * self._g_x_g(g1, blockindex, nu, nup, contractions["direct"])
-            if nu == nup:
-                self[blockindex].data[i_w, i_nu, i_nup, :,:,:,:] -= self.beta * self._g_x_g(g1, blockindex, nup + w, nup, contractions["exchange"])
+            self.set_block(g1_inu, blockindex)
 
     def iterate_mesh_inds(self):
         for (i_w, w), (i_nu, nu), (i_nup, nup) in itt.product(enumerate(self.b_mesh_inds),
@@ -100,3 +93,29 @@ class G2_0(Block2Gf):
             if np.allclose(self[block].data[:,:,:,i,j,k,l], np.zeros(self[block].data.shape[:3]), **kwargs):
                 zeros.append((i,j,k,l))
         return zeros
+
+
+class G2ph_0(G2_0):
+    """
+    G2 in the particle-hole decoupling channel
+    """
+    def set_block(self, g1, blockindex):
+        contractions = {"direct": [1,0,3,2], "exchange": [1,2,3,0]}
+        for (i_w, w), (i_nu, nu), (i_nup, nup) in self.iterate_mesh_inds():
+            if w == 0:
+                self[blockindex].data[i_w, i_nu, i_nup, :,:,:,:] += self.beta * self._g_x_g(g1, blockindex, nu, nup, contractions["direct"])
+            if nu == nup:
+                self[blockindex].data[i_w, i_nu, i_nup, :,:,:,:] -= self.beta * self._g_x_g(g1, blockindex, w + nu, nu, contractions["exchange"])
+
+
+class G2pp_0(G2_0):
+    """
+    G2 in the particle-particle decoupling channel
+    """
+    def set_block(self, g1, blockindex):
+        contractions = {"direct": [1,0,3,2], "exchange": [1,2,3,0]}
+        for (i_w, w), (i_nu, nu), (i_nup, nup) in self.iterate_mesh_inds():
+            if i_w - int(.5 * self.n_iw) == i_nu + i_nup - self.n_inu + 1: # TODO make it look less cryptic
+                self[blockindex].data[i_w, i_nu, i_nup, :,:,:,:] += self.beta * self._g_x_g(g1, blockindex, nu, nup, contractions["direct"])
+            if nu == nup:
+                self[blockindex].data[i_w, i_nu, i_nup, :,:,:,:] -= self.beta * self._g_x_g(g1, blockindex, w - nu - 1, nu, contractions["exchange"]) # TODO make it look less cryptic
